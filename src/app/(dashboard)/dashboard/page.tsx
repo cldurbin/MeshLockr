@@ -36,15 +36,19 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
           MeshLockr Admin Dashboard
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">Total Users: {loading ? '...' : users.length}</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Total Users: {loading ? '...' : users.length}
+        </p>
       </div>
 
       {!loading && users.length > 0 && (
         <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
           {users.map((user) => (
             <li key={user.id}>
-              <span className="font-mono text-blue-600 dark:text-blue-400">{user.id}</span> –{' '}
-              {new Date(user.created_at).toLocaleString()}
+              <span className="font-mono text-blue-600 dark:text-blue-400">
+                {user.id}
+              </span>{' '}
+              – {new Date(user.created_at).toLocaleString()}
             </li>
           ))}
         </ul>
