@@ -3,50 +3,64 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
-interface Policy {
-  id: string
-  org_id: string
-  allow_country: string[]
-  block_time_ranges: string[]
-  require_trusted_device: boolean
-  updated_at: string
-  created_at: string
-}
+import CreatePolicyModal from './components/CreatePolicyModal'
+import { AccessPolicy } from '../../types/policy'
 
 export default function AccessPoliciesPage() {
-  const [policies, setPolicies] = useState<Policy[]>([])
+  const [policies, setPolicies] = useState<AccessPolicy[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(5)
+  const [modalOpen, setModalOpen] = useState(false)
 
-useEffect(() => {
-  async function fetchPolicies() {
-    setLoading(true)
+  useEffect(() => {
+    async function fetchPolicies() {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/policies')
+        const result = await res.json()
+
+        if (!res.ok) {
+          throw new Error(result.error || 'Failed to fetch')
+        }
+
+        setPolicies(result)
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message)
+        } else {
+          setError('Unknown error occurred')
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPolicies()
+  }, [])
+
+  const handleCreate = async (
+    newPolicy: Omit<AccessPolicy, 'id' | 'created_at' | 'updated_at'>
+  ) => {
     try {
-      const res = await fetch('/api/policies')
+      const res = await fetch('/api/policies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPolicy),
+      })
+
       const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Failed to create policy')
 
-      if (!res.ok) {
-        throw new Error(result.error || 'Failed to fetch')
-      }
-
-      setPolicies(result)
+      setPolicies((prev) => [...prev, result])
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('Unknown error occurred')
-      }
+      console.error('Error creating policy:', err)
+      alert('Failed to create policy')
     } finally {
-      setLoading(false)
+      setModalOpen(false)
     }
   }
-
-  fetchPolicies()
-}, [])
-
 
   const paginated = policies.slice((page - 1) * perPage, page * perPage)
   const totalPages = Math.ceil(policies.length / perPage)
@@ -54,6 +68,20 @@ useEffect(() => {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Access Policies</h1>
+
+      <button
+        onClick={() => setModalOpen(true)}
+        className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Create New Policy
+      </button>
+
+      <CreatePolicyModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleCreate}
+        orgId="your-org-id" // 🔁 Replace this with actual org ID later
+      />
 
       {loading && <p>Loading policies...</p>}
       {error && <p className="text-red-600">Error: {error}</p>}

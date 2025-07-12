@@ -1,6 +1,6 @@
 // src/lib/usStates.ts
 
-export const US_STATE_OPTIONS = [
+export const US_STATES = [
   { code: 'AL', name: 'Alabama' },
   { code: 'AK', name: 'Alaska' },
   { code: 'AZ', name: 'Arizona' },
