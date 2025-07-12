@@ -11,9 +11,9 @@ interface Option {
 }
 
 interface Props {
+  value: { country: string[]; state?: string[] } | null
   onChange: (val: { country: string[]; state?: string[] } | null) => void
 }
-
 // Sort results that start with input before those that merely contain it
 const prioritizeStartsWith = (options: Option[], input: string): Option[] => {
   const search = input.toLowerCase()

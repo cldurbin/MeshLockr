@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Dialog } from '@headlessui/react'
 import { AccessPolicy } from '../../../types/policy'
 import CountryStateSelector from './CountryStateSelector'
@@ -8,15 +8,45 @@ import CountryStateSelector from './CountryStateSelector'
 interface Props {
   open: boolean
   onClose: () => void
-  onSubmit: (newPolicy: Omit<AccessPolicy, 'id' | 'created_at' | 'updated_at'>) => void
+  mode: 'create' | 'edit'
   orgId: string
+  initialValues?: AccessPolicy
+  onSubmit: (
+    updatedPolicy: Omit<AccessPolicy, 'id' | 'created_at' | 'updated_at'>,
+    id?: string
+  ) => void
 }
 
-export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Props) {
-  const [countryState, setCountryState] = useState<{ country: string[]; state?: string[] } | null>(null)
+export default function PolicyModal({
+  open,
+  onClose,
+  mode,
+  orgId,
+  initialValues,
+  onSubmit,
+}: Props) {
+  const [countryState, setCountryState] = useState<{ country: string[]; state?: string[] } | null>(
+    null
+  )
   const [blockTimes, setBlockTimes] = useState<string>('')
   const [requireTrusted, setRequireTrusted] = useState(false)
   const [error, setError] = useState('')
+
+  // Load initialValues into form when editing
+  useEffect(() => {
+    if (initialValues) {
+      setCountryState({
+        country: initialValues.allow_country || [],
+        state: initialValues.allow_state || [],
+      })
+      setBlockTimes((initialValues.block_time_ranges || []).join(', '))
+      setRequireTrusted(initialValues.require_trusted_device || false)
+    } else {
+      setCountryState(null)
+      setBlockTimes('')
+      setRequireTrusted(false)
+    }
+  }, [initialValues])
 
   const handleSave = () => {
     if (!orgId || !countryState?.country?.length) {
@@ -35,10 +65,7 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
       require_trusted_device: requireTrusted,
     }
 
-    onSubmit(newPolicy)
-    setCountryState(null)
-    setBlockTimes('')
-    setRequireTrusted(false)
+    onSubmit(newPolicy, initialValues?.id)
     setError('')
     onClose()
   }
@@ -49,14 +76,14 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="bg-white rounded-lg p-6 max-w-md w-full">
           <Dialog.Title className="text-lg font-semibold mb-4">
-            Create Access Policy
+            {mode === 'edit' ? 'Edit Access Policy' : 'Create Access Policy'}
           </Dialog.Title>
 
           {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Allowed Countries</label>
-            <CountryStateSelector onChange={setCountryState} />
+            <CountryStateSelector value={countryState} onChange={setCountryState} />
           </div>
 
           <div className="mb-4">
@@ -90,7 +117,7 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
               className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
               onClick={handleSave}
             >
-              Create
+              {mode === 'edit' ? 'Update' : 'Create'}
             </button>
           </div>
         </Dialog.Panel>

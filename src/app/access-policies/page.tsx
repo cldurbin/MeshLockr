@@ -1,9 +1,7 @@
-// src/app/access-policies/page.tsx
-
 'use client'
 
 import { useEffect, useState } from 'react'
-import CreatePolicyModal from './components/CreatePolicyModal'
+import PolicyModal from './components/PolicyModal'
 import { AccessPolicy } from '../../types/policy'
 
 export default function AccessPoliciesPage() {
@@ -13,6 +11,7 @@ export default function AccessPoliciesPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(5)
   const [modalOpen, setModalOpen] = useState(false)
+  const [editData, setEditData] = useState<AccessPolicy | null>(null)
 
   useEffect(() => {
     async function fetchPolicies() {
@@ -20,18 +19,10 @@ export default function AccessPoliciesPage() {
       try {
         const res = await fetch('/api/policies')
         const result = await res.json()
-
-        if (!res.ok) {
-          throw new Error(result.error || 'Failed to fetch')
-        }
-
+        if (!res.ok) throw new Error(result.error || 'Failed to fetch')
         setPolicies(result)
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError('Unknown error occurred')
-        }
+        setError(err instanceof Error ? err.message : 'Unknown error occurred')
       } finally {
         setLoading(false)
       }
@@ -40,25 +31,55 @@ export default function AccessPoliciesPage() {
     fetchPolicies()
   }, [])
 
-  const handleCreate = async (
-    newPolicy: Omit<AccessPolicy, 'id' | 'created_at' | 'updated_at'>
+  const handleSaveOrUpdate = async (
+    updatedPolicy: Omit<AccessPolicy, 'id' | 'created_at' | 'updated_at'>,
+    id?: string
   ) => {
     try {
+      const method = id ? 'PUT' : 'POST'
       const res = await fetch('/api/policies', {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPolicy),
+        body: JSON.stringify(id ? { id, ...updatedPolicy } : updatedPolicy),
       })
 
       const result = await res.json()
-      if (!res.ok) throw new Error(result.error || 'Failed to create policy')
+      if (!res.ok) throw new Error(result.error || 'Failed to save policy')
 
-      setPolicies((prev) => [...prev, result])
+      if (id) {
+        setPolicies((prev) => prev.map((p) => (p.id === id ? result : p)))
+      } else {
+        setPolicies((prev) => [...prev, result])
+      }
     } catch (err) {
-      console.error('Error creating policy:', err)
-      alert('Failed to create policy')
+      console.error('❌ Error saving policy:', err)
+      alert('Failed to save policy')
     } finally {
       setModalOpen(false)
+      setEditData(null)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    const confirmed = window.confirm('Are you sure you want to delete this policy?')
+    if (!confirmed) return
+
+    try {
+      const res = await fetch('/api/policies', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+
+      if (!res.ok) {
+        const result = await res.json()
+        throw new Error(result.error || 'Failed to delete')
+      }
+
+      setPolicies((prev) => prev.filter((p) => p.id !== id))
+    } catch (err) {
+      console.error('❌ Error deleting policy:', err)
+      alert('Failed to delete policy')
     }
   }
 
@@ -70,17 +91,25 @@ export default function AccessPoliciesPage() {
       <h1 className="text-2xl font-bold mb-4">Access Policies</h1>
 
       <button
-        onClick={() => setModalOpen(true)}
+        onClick={() => {
+          setModalOpen(true)
+          setEditData(null)
+        }}
         className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
       >
         Create New Policy
       </button>
 
-      <CreatePolicyModal
+      <PolicyModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleCreate}
-        orgId="your-org-id" // 🔁 Replace this with actual org ID later
+        onClose={() => {
+          setModalOpen(false)
+          setEditData(null)
+        }}
+        onSubmit={handleSaveOrUpdate}
+        orgId="your-org-id"
+        mode={editData ? 'edit' : 'create'}
+        initialValues={editData || undefined}
       />
 
       {loading && <p>Loading policies...</p>}
@@ -120,40 +149,57 @@ export default function AccessPoliciesPage() {
                   <th className="px-4 py-2">Blocked Times</th>
                   <th className="px-4 py-2">Trusted Device</th>
                   <th className="px-4 py-2">Updated</th>
+                  <th className="px-4 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-  {paginated.length > 0 ? (
-    paginated.map((policy) => (
-      <tr key={policy.id} className="border-t">
-        <td className="px-4 py-2">
-          {(policy.allow_country || []).join(', ')}
-          {policy.allow_state?.length
-            ? `, ${policy.allow_state.join(', ')}`
-            : ''}
-        </td>
-        <td className="px-4 py-2">
-          {(policy.block_time_ranges || []).join(', ') || '—'}
-        </td>
-        <td className="px-4 py-2">
-          {policy.require_trusted_device ? 'Yes' : 'No'}
-        </td>
-        <td className="px-4 py-2">
-          {policy.updated_at
-            ? new Date(policy.updated_at).toLocaleString()
-            : '—'}
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan={4} className="text-center text-gray-500 px-4 py-6">
-        No access policies found.
-      </td>
-    </tr>
-  )}
-</tbody>
-
+                {paginated.length > 0 ? (
+                  paginated.map((policy) => (
+                    <tr key={policy.id} className="border-t">
+                      <td className="px-4 py-2">
+                        {(policy.allow_country || []).join(', ')}
+                        {policy.allow_state?.length
+                          ? `, ${policy.allow_state.join(', ')}`
+                          : ''}
+                      </td>
+                      <td className="px-4 py-2">
+                        {(policy.block_time_ranges || []).join(', ') || '—'}
+                      </td>
+                      <td className="px-4 py-2">
+                        {policy.require_trusted_device ? 'Yes' : 'No'}
+                      </td>
+                      <td className="px-4 py-2">
+                        {policy.updated_at
+                          ? new Date(policy.updated_at).toLocaleString()
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-2 space-x-2">
+                        <button
+                          className="text-blue-600 underline text-sm"
+                          onClick={() => {
+                            setEditData(policy)
+                            setModalOpen(true)
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="text-red-600 underline text-sm"
+                          onClick={() => handleDelete(policy.id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center text-gray-500 px-4 py-6">
+                      No access policies found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
 
