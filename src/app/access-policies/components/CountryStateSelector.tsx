@@ -19,6 +19,15 @@ interface Props {
   onChange: (val: CountryStateValue | null) => void
 }
 
+// Custom filter to prioritize "starts with" matches before substring matches
+const customFilterOption = (option: { label: string; value: string }, input: string) => {
+  const label = option.label.toLowerCase()
+  const search = input.toLowerCase()
+
+  if (label.startsWith(search)) return true
+  return label.includes(search)
+}
+
 export default function CountryStateSelector({ value, onChange }: Props) {
   const countryOptions: Option[] = COUNTRY_OPTIONS.map((c) => ({
     value: c.code,
@@ -40,9 +49,9 @@ export default function CountryStateSelector({ value, onChange }: Props) {
     if (!selected) {
       onChange(null)
     } else if (selected.value === 'US') {
-      onChange({ country: selected.value, state: value?.state }) // state will show
+      onChange({ country: selected.value, state: value?.state }) // retain state if coming from US
     } else {
-      onChange({ country: selected.value }) // non-US = no state
+      onChange({ country: selected.value }) // reset state
     }
   }
 
@@ -59,6 +68,7 @@ export default function CountryStateSelector({ value, onChange }: Props) {
         onChange={handleCountryChange}
         placeholder="Select a country..."
         className="text-sm"
+        filterOption={customFilterOption}
       />
 
       {value?.country === 'US' && (
@@ -68,6 +78,7 @@ export default function CountryStateSelector({ value, onChange }: Props) {
           onChange={handleStateChange}
           placeholder="Select a U.S. state..."
           className="text-sm"
+          filterOption={customFilterOption}
         />
       )}
     </div>
