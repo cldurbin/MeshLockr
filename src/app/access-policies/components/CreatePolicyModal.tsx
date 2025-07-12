@@ -13,25 +13,25 @@ interface Props {
 }
 
 export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Props) {
-  const [countryState, setCountryState] = useState<{ country: string; state?: string } | null>(null)
+  const [countryState, setCountryState] = useState<{ country: string[]; state?: string[] } | null>(null)
   const [blockTimes, setBlockTimes] = useState<string>('')
   const [requireTrusted, setRequireTrusted] = useState(false)
   const [error, setError] = useState('')
 
   const handleSave = () => {
-    if (!orgId || !countryState?.country) {
-      setError('Please provide an org ID and select a country.')
+    if (!orgId || !countryState?.country?.length) {
+      setError('Please provide an org ID and select at least one country.')
       return
     }
 
     const newPolicy = {
       org_id: orgId,
-      allow_country: [countryState.country],
-      allow_state: countryState.state ? [countryState.state] : [],
+      allow_country: countryState.country,
+      allow_state: countryState.state || [],
       block_time_ranges:
         blockTimes.trim().length > 0
-        ? blockTimes.split(',').map((s) => s.trim()).filter(Boolean)
-        : undefined,
+          ? blockTimes.split(',').map((s) => s.trim()).filter(Boolean)
+          : undefined,
       require_trusted_device: requireTrusted,
     }
 
@@ -55,8 +55,8 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
           {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Allowed Country</label>
-            <CountryStateSelector value={countryState} onChange={setCountryState} />
+            <label className="block text-sm font-medium mb-1">Allowed Countries</label>
+            <CountryStateSelector onChange={setCountryState} />
           </div>
 
           <div className="mb-4">

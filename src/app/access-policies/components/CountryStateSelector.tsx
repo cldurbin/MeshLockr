@@ -1,13 +1,9 @@
 'use client'
 
+import { useMemo, useState, useEffect } from 'react'
 import Select from 'react-select'
 import { COUNTRY_OPTIONS } from '../../../data/country-options'
 import { US_STATES } from '../../../data/us-states'
-
-interface CountryStateValue {
-  country: string
-  state?: string
-}
 
 interface Option {
   value: string
@@ -15,72 +11,96 @@ interface Option {
 }
 
 interface Props {
-  value: CountryStateValue | null
-  onChange: (val: CountryStateValue | null) => void
+  onChange: (val: { country: string[]; state?: string[] } | null) => void
 }
 
-// Custom filter to prioritize "starts with" matches before substring matches
-const customFilterOption = (option: { label: string; value: string }, input: string) => {
-  const label = option.label.toLowerCase()
+// Sort results that start with input before those that merely contain it
+const prioritizeStartsWith = (options: Option[], input: string): Option[] => {
   const search = input.toLowerCase()
+  const startsWith: Option[] = []
+  const includes: Option[] = []
 
-  if (label.startsWith(search)) return true
-  return label.includes(search)
-}
-
-export default function CountryStateSelector({ value, onChange }: Props) {
-  const countryOptions: Option[] = COUNTRY_OPTIONS.map((c) => ({
-    value: c.code,
-    label: c.name,
-  }))
-
-  const stateOptions: Option[] = US_STATES.map((s) => ({
-    value: s.code,
-    label: s.name,
-  }))
-
-  const selectedCountry = countryOptions.find((opt) => opt.value === value?.country) || null
-  const selectedState =
-    value?.country === 'US'
-      ? stateOptions.find((opt) => opt.value === value?.state)
-      : null
-
-  const handleCountryChange = (selected: Option | null) => {
-    if (!selected) {
-      onChange(null)
-    } else if (selected.value === 'US') {
-      onChange({ country: selected.value, state: value?.state }) // retain state if coming from US
-    } else {
-      onChange({ country: selected.value }) // reset state
+  for (const opt of options) {
+    const label = opt.label.toLowerCase()
+    if (label.startsWith(search)) {
+      startsWith.push(opt)
+    } else if (label.includes(search)) {
+      includes.push(opt)
     }
   }
 
-  const handleStateChange = (selected: Option | null) => {
-    if (!selected) return
-    onChange({ country: value?.country || 'US', state: selected.value })
-  }
+  return [...startsWith, ...includes]
+}
+
+export default function CountryStateSelector({ onChange }: Props) {
+  const allCountryOptions: Option[] = useMemo(
+    () =>
+      COUNTRY_OPTIONS.map((c) => ({
+        value: c.code,
+        label: c.name,
+      })),
+    []
+  )
+
+  const stateOptions: Option[] = useMemo(
+    () =>
+      US_STATES.map((s) => ({
+        value: s.code,
+        label: s.name,
+      })),
+    []
+  )
+
+  const [countryInput, setCountryInput] = useState('')
+  const [selectedCountries, setSelectedCountries] = useState<Option[]>([])
+  const [selectedStates, setSelectedStates] = useState<Option[]>([])
+
+  const showStateSelect = selectedCountries.some((c) => c.value === 'US')
+
+  const filteredCountries = useMemo(
+    () => prioritizeStartsWith(allCountryOptions, countryInput),
+    [allCountryOptions, countryInput]
+  )
+
+  useEffect(() => {
+    if (selectedCountries.length === 0) {
+      onChange(null)
+    } else {
+      onChange({
+        country: selectedCountries.map((c) => c.value),
+        state: selectedStates.map((s) => s.value),
+      })
+    }
+  }, [selectedCountries, selectedStates, onChange])
 
   return (
     <div className="space-y-4">
       <Select
-        options={countryOptions}
-        value={selectedCountry}
-        onChange={handleCountryChange}
-        placeholder="Select a country..."
+        options={filteredCountries}
+        value={selectedCountries}
+        isMulti
+        onChange={(vals) => setSelectedCountries(vals as Option[])}
+        onInputChange={(input) => {
+          setCountryInput(input)
+          return input
+        }}
+        placeholder="Select countries..."
         className="text-sm"
-        filterOption={customFilterOption}
+        isClearable
       />
 
-      {value?.country === 'US' && (
+      {showStateSelect && (
         <Select
           options={stateOptions}
-          value={selectedState}
-          onChange={handleStateChange}
-          placeholder="Select a U.S. state..."
+          value={selectedStates}
+          isMulti
+          onChange={(vals) => setSelectedStates(vals as Option[])}
+          placeholder="Select U.S. states..."
           className="text-sm"
-          filterOption={customFilterOption}
+          isClearable
         />
       )}
     </div>
   )
 }
+// src/app/access-policies/components/CountryStateSelector.tsx
