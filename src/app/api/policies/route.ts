@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
-import supabase from '@lib/supabase';
+import { createServerSupabaseClient } from '@lib/supabase';
+import { auth } from '@clerk/nextjs';
 
 export async function GET() {
   try {
+    const { getToken } = auth();
+    const token = await getToken();
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createServerSupabaseClient(token);
     const { data, error } = await supabase.from('policies').select('*');
 
     if (error) {
