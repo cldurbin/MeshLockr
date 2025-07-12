@@ -4,7 +4,6 @@ import { authMiddleware } from "@clerk/nextjs";
 export default authMiddleware({
   // Define which routes should remain publicly accessible
   publicRoutes: [
-    "/",
     "/sign-in",
     "/sign-up",
     "/api/health",
