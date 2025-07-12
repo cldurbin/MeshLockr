@@ -150,7 +150,7 @@ export async function PUT(req: NextRequest) {
 
 /**
  * DELETE /api/policies
- * Delete a policy by ID
+ * Soft delete a policy by setting deleted = true
  */
 export async function DELETE(req: NextRequest) {
   try {
@@ -160,14 +160,17 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing policy ID' }, { status: 400 })
     }
 
-    const { error } = await supabase.from('policies').delete().eq('id', id)
+    const { error } = await supabase
+      .from('policies')
+      .update({ deleted: true }) // ✅ Soft delete
+      .eq('id', id)
 
     if (error) {
-      console.error('❌ Supabase delete error:', error.message)
-      return NextResponse.json({ error: 'Failed to delete policy' }, { status: 500 })
+      console.error('❌ Supabase soft delete error:', error.message)
+      return NextResponse.json({ error: 'Failed to soft delete policy' }, { status: 500 })
     }
 
-    console.log('🗑️ Policy deleted:', id)
+    console.log('🗑️ Policy soft-deleted:', id)
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('🚨 Unexpected error in DELETE /api/policies:', err)

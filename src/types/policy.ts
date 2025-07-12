@@ -5,7 +5,8 @@ export interface AccessPolicy {
   allow_state?: string[]
   block_time_ranges?: string[]
   require_trusted_device: boolean
+  created_by?: string
   created_at: string
   updated_at: string
-  created_by?: string 
+  deleted?: boolean 
 }
