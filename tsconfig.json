@@ -20,8 +20,9 @@
     ],
     "baseUrl": "src",
     "paths": {
-      "@/*": ["src/*"],
-      "@lib/*": ["lib/*"]
+  "@/*": ["src/*"],
+  "@lib/*": ["lib/*"],
+  "@types/*": ["types/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
