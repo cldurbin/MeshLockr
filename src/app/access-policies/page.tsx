@@ -1,10 +1,12 @@
+// src/app/access-policies/page.tsx
+
 export default function AccessPoliciesPage() {
   return (
-    <div>
-      <h1>Access Policies</h1>
-      <p>This is where access rules will be managed.</p>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Access Policies</h1>
+      <p className="text-gray-700">
+        This is where access rules will be managed. You can define and edit policy logic here.
+      </p>
     </div>
   );
 }
-// This page serves as a placeholder for the access policies section of the dashboard.
-// It can be expanded with forms and components to manage access policies in the future.
