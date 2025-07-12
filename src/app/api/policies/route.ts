@@ -13,11 +13,20 @@ const supabase = createServerSupabaseClient(token!)
 
 /**
  * GET /api/policies
- * Fetch all access policies
+ * Fetch all access policies for an org
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const orgId = req.nextUrl.searchParams.get('org_id')
+
+  if (!orgId) {
+    return NextResponse.json({ error: 'Missing org_id' }, { status: 400 })
+  }
+
   try {
-    const { data, error } = await supabase.from('policies').select('*')
+    const { data, error } = await supabase
+      .from('policies')
+      .select('*')
+      .eq('org_id', orgId)
 
     if (error) {
       console.error('❌ Supabase fetch error:', error.message)
@@ -44,6 +53,7 @@ export async function POST(req: NextRequest) {
       allow_state,
       block_time_ranges,
       require_trusted_device,
+      created_by,
     } = body
 
     if (!org_id || !allow_country?.length) {
@@ -54,6 +64,7 @@ export async function POST(req: NextRequest) {
       org_id,
       allow_country,
       require_trusted_device: !!require_trusted_device,
+      created_by: created_by || 'unknown@meshlockr.dev',
     }
 
     if (Array.isArray(allow_state) && allow_state.length > 0) {

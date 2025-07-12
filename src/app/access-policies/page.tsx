@@ -1,10 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useUser, useOrganization } from '@clerk/nextjs'
 import PolicyModal from './components/PolicyModal'
 import { AccessPolicy } from '../../types/policy'
 
 export default function AccessPoliciesPage() {
+  const { user } = useUser()
+  const { organization } = useOrganization()
+
+  const orgId = organization?.id || 'fallback-org-id'
+  const email = user?.primaryEmailAddress?.emailAddress || 'unknown@meshlockr.dev'
+
   const [policies, setPolicies] = useState<AccessPolicy[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -17,7 +24,7 @@ export default function AccessPoliciesPage() {
     async function fetchPolicies() {
       setLoading(true)
       try {
-        const res = await fetch('/api/policies')
+        const res = await fetch(`/api/policies?org_id=${orgId}`)
         const result = await res.json()
         if (!res.ok) throw new Error(result.error || 'Failed to fetch')
         setPolicies(result)
@@ -28,8 +35,8 @@ export default function AccessPoliciesPage() {
       }
     }
 
-    fetchPolicies()
-  }, [])
+    if (orgId) fetchPolicies()
+  }, [orgId])
 
   const handleSaveOrUpdate = async (
     updatedPolicy: Omit<AccessPolicy, 'id' | 'created_at' | 'updated_at'>,
@@ -37,20 +44,22 @@ export default function AccessPoliciesPage() {
   ) => {
     try {
       const method = id ? 'PUT' : 'POST'
+      const payload = id
+        ? { ...updatedPolicy, id, org_id: orgId }
+        : { ...updatedPolicy, org_id: orgId, created_by: email }
+
       const res = await fetch('/api/policies', {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(id ? { id, ...updatedPolicy } : updatedPolicy),
+        body: JSON.stringify(payload),
       })
 
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Failed to save policy')
 
-      if (id) {
-        setPolicies((prev) => prev.map((p) => (p.id === id ? result : p)))
-      } else {
-        setPolicies((prev) => [...prev, result])
-      }
+      setPolicies((prev) =>
+        id ? prev.map((p) => (p.id === id ? result : p)) : [...prev, result]
+      )
     } catch (err) {
       console.error('❌ Error saving policy:', err)
       alert('Failed to save policy')
@@ -61,8 +70,7 @@ export default function AccessPoliciesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm('Are you sure you want to delete this policy?')
-    if (!confirmed) return
+    if (!window.confirm('Are you sure you want to delete this policy?')) return
 
     try {
       const res = await fetch('/api/policies', {
@@ -107,7 +115,7 @@ export default function AccessPoliciesPage() {
           setEditData(null)
         }}
         onSubmit={handleSaveOrUpdate}
-        orgId="your-org-id"
+        orgId={orgId}
         mode={editData ? 'edit' : 'create'}
         initialValues={editData || undefined}
       />
@@ -149,6 +157,7 @@ export default function AccessPoliciesPage() {
                   <th className="px-4 py-2">Blocked Times</th>
                   <th className="px-4 py-2">Trusted Device</th>
                   <th className="px-4 py-2">Updated</th>
+                  <th className="px-4 py-2">Created By</th>
                   <th className="px-4 py-2">Actions</th>
                 </tr>
               </thead>
@@ -173,6 +182,9 @@ export default function AccessPoliciesPage() {
                           ? new Date(policy.updated_at).toLocaleString()
                           : '—'}
                       </td>
+                      <td className="px-4 py-2 text-xs text-gray-600">
+                        {policy.created_by || '—'}
+                      </td>
                       <td className="px-4 py-2 space-x-2">
                         <button
                           className="text-blue-600 underline text-sm"
@@ -194,7 +206,7 @@ export default function AccessPoliciesPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-500 px-4 py-6">
+                    <td colSpan={6} className="text-center text-gray-500 px-4 py-6">
                       No access policies found.
                     </td>
                   </tr>

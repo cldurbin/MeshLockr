@@ -2,9 +2,16 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  publicRoutes: ["/sign-in", "/sign-up"],
+  // Define which routes should remain publicly accessible
+  publicRoutes: [
+    "/",
+    "/sign-in",
+    "/sign-up",
+    "/api/health",
+  ],
 });
 
 export const config = {
+  // Match all routes except static files (_next, assets, etc.)
   matcher: ["/((?!_next|.*\\..*).*)"],
 };
