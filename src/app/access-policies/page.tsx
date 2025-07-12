@@ -22,7 +22,7 @@ export default function AccessPoliciesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(5)
+  const [perPage] = useState(5) // ✅ Fix for eslint: unused setter
   const [modalOpen, setModalOpen] = useState(false)
   const [editData, setEditData] = useState<AccessPolicy | null>(null)
   const [undoTimer, setUndoTimer] = useState<NodeJS.Timeout | null>(null)
