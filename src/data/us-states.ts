@@ -1,4 +1,3 @@
-// src/lib/usStates.ts
 
 export const US_STATES = [
   { code: 'AL', name: 'Alabama' },
