@@ -5,6 +5,7 @@ import { useUser, useOrganization } from '@clerk/nextjs'
 import PolicyModal from './components/PolicyModal'
 import { AccessPolicy } from '../../types/policy'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner' 
 
 export default function AccessPoliciesPage() {
   const { user } = useUser()
@@ -22,7 +23,7 @@ export default function AccessPoliciesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
-  const [perPage] = useState(5) // ✅ Fix for eslint: unused setter
+  const [perPage] = useState(5)
   const [modalOpen, setModalOpen] = useState(false)
   const [editData, setEditData] = useState<AccessPolicy | null>(null)
   const [undoTimer, setUndoTimer] = useState<NodeJS.Timeout | null>(null)
@@ -38,6 +39,7 @@ export default function AccessPoliciesPage() {
         setPolicies(result.filter((p: AccessPolicy) => !p.deleted))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error occurred')
+        toast.error('Failed to load policies.')
       } finally {
         setLoading(false)
       }
@@ -71,9 +73,11 @@ export default function AccessPoliciesPage() {
       setPolicies((prev) =>
         id ? prev.map((p) => (p.id === id ? result : p)) : [...prev, result]
       )
+
+      toast.success(id ? 'Policy updated successfully.' : 'Policy created successfully.')
     } catch (err) {
       console.error('❌ Error saving policy:', err)
-      alert('Failed to save policy')
+      toast.error('Failed to save policy.')
     } finally {
       setModalOpen(false)
       setEditData(null)
@@ -99,6 +103,7 @@ export default function AccessPoliciesPage() {
         if (!res.ok) throw new Error('Soft delete failed')
       } catch {
         setPolicies((prev) => [...prev, policyToDelete])
+        toast.error('Delete failed. Policy restored.')
       } finally {
         setUndoPolicy(null)
         setUndoTimer(null)
@@ -106,17 +111,27 @@ export default function AccessPoliciesPage() {
     }, 5000)
 
     setUndoTimer(timer)
+
+    toast('Policy deleted', {
+      description: 'Undo available for 5 seconds.',
+    })
   }
 
   const handleBulkDelete = () => {
     if (!selected.length || !window.confirm(`Delete ${selected.length} policies?`)) return
     selected.forEach((id) => softDeletePolicy(id))
     setSelected([])
+    toast(`${selected.length} policies deleted`, {
+      description: 'You can undo each one individually.',
+    })
   }
 
   const undoDelete = () => {
     if (undoTimer) clearTimeout(undoTimer)
-    if (undoPolicy) setPolicies((prev) => [...prev, undoPolicy])
+    if (undoPolicy) {
+      setPolicies((prev) => [...prev, undoPolicy])
+      toast.success('Policy restored.')
+    }
     setUndoPolicy(null)
     setUndoTimer(null)
   }

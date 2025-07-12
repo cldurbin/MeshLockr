@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Dialog } from '@headlessui/react'
 import { AccessPolicy } from '../../../types/policy'
 import CountryStateSelector from './CountryStateSelector'
+import { toast } from 'sonner' // ✅ Sonner toast
 
 interface Props {
   open: boolean
@@ -25,14 +26,11 @@ export default function PolicyModal({
   initialValues,
   onSubmit,
 }: Props) {
-  const [countryState, setCountryState] = useState<{ country: string[]; state?: string[] } | null>(
-    null
-  )
+  const [countryState, setCountryState] = useState<{ country: string[]; state?: string[] } | null>(null)
   const [blockTimes, setBlockTimes] = useState<string>('')
   const [requireTrusted, setRequireTrusted] = useState(false)
   const [error, setError] = useState('')
 
-  // Load initialValues into form when editing
   useEffect(() => {
     if (initialValues) {
       setCountryState({
@@ -51,6 +49,7 @@ export default function PolicyModal({
   const handleSave = () => {
     if (!orgId || !countryState?.country?.length) {
       setError('Please provide an org ID and select at least one country.')
+      toast.error('Missing required fields: org ID or country.')
       return
     }
 
@@ -65,9 +64,21 @@ export default function PolicyModal({
       require_trusted_device: requireTrusted,
     }
 
-    onSubmit(newPolicy, initialValues?.id)
-    setError('')
-    onClose()
+    try {
+      onSubmit(newPolicy, initialValues?.id)
+
+      toast.success(
+        mode === 'edit'
+          ? 'Policy updated successfully.'
+          : 'Policy created successfully.'
+      )
+
+      setError('')
+      onClose()
+    } catch (err) {
+        console.error("Failed to save policy:", err)
+      toast.error('Failed to save policy. Please try again.')
+    }
   }
 
   return (
