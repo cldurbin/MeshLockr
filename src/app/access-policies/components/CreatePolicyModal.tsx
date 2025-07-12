@@ -28,10 +28,10 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
       org_id: orgId,
       allow_country: [countryState.country],
       allow_state: countryState.state ? [countryState.state] : [],
-      block_time_ranges: blockTimes
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0),
+      block_time_ranges:
+        blockTimes.trim().length > 0
+        ? blockTimes.split(',').map((s) => s.trim()).filter(Boolean)
+        : undefined,
       require_trusted_device: requireTrusted,
     }
 

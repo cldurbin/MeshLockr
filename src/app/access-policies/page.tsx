@@ -123,19 +123,37 @@ export default function AccessPoliciesPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((policy) => (
-                  <tr key={policy.id} className="border-t">
-                    <td className="px-4 py-2">{policy.allow_country.join(', ')}</td>
-                    <td className="px-4 py-2">{policy.block_time_ranges.join(', ')}</td>
-                    <td className="px-4 py-2">
-                      {policy.require_trusted_device ? 'Yes' : 'No'}
-                    </td>
-                    <td className="px-4 py-2">
-                      {new Date(policy.updated_at).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+  {paginated.length > 0 ? (
+    paginated.map((policy) => (
+      <tr key={policy.id} className="border-t">
+        <td className="px-4 py-2">
+          {(policy.allow_country || []).join(', ')}
+          {policy.allow_state?.length
+            ? `, ${policy.allow_state.join(', ')}`
+            : ''}
+        </td>
+        <td className="px-4 py-2">
+          {(policy.block_time_ranges || []).join(', ') || '—'}
+        </td>
+        <td className="px-4 py-2">
+          {policy.require_trusted_device ? 'Yes' : 'No'}
+        </td>
+        <td className="px-4 py-2">
+          {policy.updated_at
+            ? new Date(policy.updated_at).toLocaleString()
+            : '—'}
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan={4} className="text-center text-gray-500 px-4 py-6">
+        No access policies found.
+      </td>
+    </tr>
+  )}
+</tbody>
+
             </table>
           </div>
 
