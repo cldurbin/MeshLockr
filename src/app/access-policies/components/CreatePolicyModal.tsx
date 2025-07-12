@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Dialog } from '@headlessui/react'
 import { AccessPolicy } from '../../../types/policy'
-import { COUNTRY_OPTIONS } from '../../../data/country-options'
+import CountryStateSelector from './CountryStateSelector'
 
 interface Props {
   open: boolean
@@ -13,20 +13,21 @@ interface Props {
 }
 
 export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Props) {
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
+  const [countryState, setCountryState] = useState<{ country: string; state?: string } | null>(null)
   const [blockTimes, setBlockTimes] = useState<string>('')
   const [requireTrusted, setRequireTrusted] = useState(false)
   const [error, setError] = useState('')
 
   const handleSave = () => {
-    if (!orgId || selectedCountries.length === 0) {
-      setError('Please provide an org ID and select at least one country.')
+    if (!orgId || !countryState?.country) {
+      setError('Please provide an org ID and select a country.')
       return
     }
 
     const newPolicy = {
       org_id: orgId,
-      allow_country: selectedCountries,
+      allow_country: [countryState.country],
+      allow_state: countryState.state ? [countryState.state] : [],
       block_time_ranges: blockTimes
         .split(',')
         .map((s) => s.trim())
@@ -35,17 +36,11 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
     }
 
     onSubmit(newPolicy)
-    setSelectedCountries([])
+    setCountryState(null)
     setBlockTimes('')
     setRequireTrusted(false)
     setError('')
     onClose()
-  }
-
-  const handleToggleCountry = (code: string) => {
-    setSelectedCountries((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
-    )
   }
 
   return (
@@ -60,23 +55,8 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
           {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Allowed Countries</label>
-            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto border rounded p-2">
-              {COUNTRY_OPTIONS.map(({ code, name }) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => handleToggleCountry(code)}
-                  className={`px-2 py-1 border rounded text-sm ${
-                    selectedCountries.includes(code)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-800'
-                  }`}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
+            <label className="block text-sm font-medium mb-1">Allowed Country</label>
+            <CountryStateSelector value={countryState} onChange={setCountryState} />
           </div>
 
           <div className="mb-4">
@@ -118,4 +98,3 @@ export default function CreatePolicyModal({ open, onClose, onSubmit, orgId }: Pr
     </Dialog>
   )
 }
-// src/data/country-options.ts
