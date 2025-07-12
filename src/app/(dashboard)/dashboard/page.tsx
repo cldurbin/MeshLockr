@@ -63,4 +63,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-// src/app/(dashboard)/layout.tsx
