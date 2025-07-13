@@ -1,7 +1,7 @@
 import OnboardingForm from './components/OnboardingForm';
 import InviteTeammatesForm from './components/InviteTeammatesForm';
 
-export default function OnboardingPage({
+export default async function OnboardingPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
