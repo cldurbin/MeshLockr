@@ -1,16 +1,13 @@
 import OnboardingForm from './components/OnboardingForm';
 import InviteTeammatesForm from './components/InviteTeammatesForm';
 
-interface OnboardingPageProps {
-  searchParams: {
-    step?: string;
-    orgId?: string;
-  };
-}
-
-export default function OnboardingPage({ searchParams }: OnboardingPageProps) {
-  const step = searchParams?.step ?? 'create';
-  const orgId = searchParams?.orgId;
+export default function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const step = typeof searchParams?.step === 'string' ? searchParams.step : 'create';
+  const orgId = typeof searchParams?.orgId === 'string' ? searchParams.orgId : undefined;
 
   return (
     <div className="max-w-xl mx-auto py-10 space-y-8">
