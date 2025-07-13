@@ -32,14 +32,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-          MeshLockr Admin Dashboard
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Total Users: {loading ? '...' : users.length}
-        </p>
-      </div>
+      <p className="text-gray-600 dark:text-gray-400">
+        You&apos;re signed in and ready to manage access policies and logs.{' '}
+        <strong>Total Users: {loading ? '...' : users.length}</strong>
+      </p>
 
       {!loading && users.length > 0 && (
         <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">

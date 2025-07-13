@@ -160,11 +160,10 @@ export default function AccessPoliciesPage() {
   const totalPages = Math.ceil(filtered.length / perPage)
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-1">Access Policies</h1>
-      <p className="text-sm text-gray-600 mb-4">
-        Policies for: <span className="font-medium">{orgName}</span>
-      </p>
+  <div className="p-4">
+    <p className="text-sm text-gray-600 mb-4">
+      Policies for: <span className="font-medium">{orgName}</span>
+    </p>
 
       {undoPolicy && (
         <div className="mb-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded flex justify-between items-center">
