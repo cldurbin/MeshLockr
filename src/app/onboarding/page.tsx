@@ -1,9 +1,13 @@
 import OnboardingForm from './components/OnboardingForm';
 import InviteTeammatesForm from './components/InviteTeammatesForm';
 
-export default function OnboardingPage({ searchParams }: { searchParams: Record<string, string> }) {
-  const step = searchParams.step || 'create';
-  const orgId = searchParams.orgId;
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default function OnboardingPage({ searchParams }: PageProps) {
+  const step = typeof searchParams.step === 'string' ? searchParams.step : 'create';
+  const orgId = typeof searchParams.orgId === 'string' ? searchParams.orgId : undefined;
 
   return (
     <div className="max-w-xl mx-auto py-10 space-y-8">
@@ -17,4 +21,3 @@ export default function OnboardingPage({ searchParams }: { searchParams: Record<
     </div>
   );
 }
-// src/app/onboarding/page.tsx
