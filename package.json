@@ -12,6 +12,7 @@
     "@clerk/nextjs": "^4.31.8",
     "@headlessui/react": "^2.2.4",
     "@supabase/supabase-js": "^2.50.4",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.525.0",
     "next": "15.3.5",
     "react": "^18.3.1",
