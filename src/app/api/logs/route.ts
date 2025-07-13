@@ -1,42 +1,65 @@
 // src/app/api/logs/route.ts
 import { NextResponse } from 'next/server';
-import supabase from '../../../lib/supabase';
+import supabase from '@/lib/supabase';
 
+// ✅ POST: Secure logging with verified session data
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { user_id, action, metadata, org_id, user_email } = body;
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from('logs').insert([
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const { action, metadata } = body;
+
+  // Extract values from the JWT claims
+  const user_id = user.id;
+  const user_email = user.email || '';
+  const org_id = (user?.user_metadata?.org_id || null) as string | null;
+
+  if (!action || !org_id) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
+  const { error: insertError } = await supabase.from('logs').insert([
     {
       user_id,
       user_email,
+      org_id,
       action,
       metadata,
-      org_id,
     },
   ]);
 
-  if (error) {
-    console.error('❌ Error inserting log:', error);
+  if (insertError) {
+    console.error('❌ Error inserting log:', insertError);
     return NextResponse.json({ error: 'Failed to log action' }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
 }
 
+// ✅ GET: Flexible filters + tenant/org-aware protection
 export async function GET(req: Request) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const org_id = user?.user_metadata?.org_id || null;
+  if (!org_id) {
+    return NextResponse.json({ error: 'Missing org_id in session' }, { status: 400 });
+  }
+
   const { searchParams } = new URL(req.url);
-  const org_id = searchParams.get('org_id');
   const user_id = searchParams.get('user_id');
   const action = searchParams.get('action');
   const date = searchParams.get('date');
   const limit = parseInt(searchParams.get('limit') || '20');
   const page = parseInt(searchParams.get('page') || '1');
   const offset = (page - 1) * limit;
-
-  if (!org_id) {
-    return NextResponse.json({ error: 'Missing org_id' }, { status: 400 });
-  }
 
   let query = supabase
     .from('logs')

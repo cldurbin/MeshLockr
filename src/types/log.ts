@@ -1,9 +1,9 @@
-// src/types/log.ts
-
 export interface LogEntry {
   id: string;
   user_id: string;
+  user_email?: string;
   action: string;
-  metadata?: Record<string, string | number | boolean | null>;
+  metadata?: Record<string, unknown>;
+  org_id?: string;
   created_at: string;
 }
