@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LogEntry } from '@/types/log';
 import LogDetailsModal from './LogDetailsModal';
-import { Loader2, Download, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Loader2,
+  Download,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useOrganization } from '@clerk/nextjs';
 import { createClient } from '@supabase/supabase-js';
 
@@ -14,8 +20,6 @@ const supabase = createClient(
 
 export default function LogsTable() {
   const { organization } = useOrganization();
-  const orgId = organization?.id || '';
-
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
@@ -25,11 +29,12 @@ export default function LogsTable() {
   const [limit] = useState(10);
 
   const fetchLogs = useCallback(async () => {
-    if (!orgId) return;
+    if (!organization?.id) return;
+
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        org_id: orgId,
+        org_id: organization.id,
         page: page.toString(),
         limit: limit.toString(),
         ...(search ? { action: search } : {}),
@@ -45,24 +50,30 @@ export default function LogsTable() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, page, limit, search]);
+  }, [organization?.id, page, limit, search]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
 
   useEffect(() => {
+    if (!organization?.id) return;
+
     const channel = supabase
       .channel('logs-stream')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'logs' }, () => {
-        fetchLogs();
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'logs' },
+        () => {
+          fetchLogs();
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchLogs]);
+  }, [organization?.id, fetchLogs]);
 
   function exportCSV() {
     const header = ['User ID', 'Action', 'Created At'];
@@ -81,6 +92,12 @@ export default function LogsTable() {
     a.download = 'meshlockr-logs.csv';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  if (!organization?.id) {
+    return (
+      <div className="text-center py-10 text-gray-500">Loading organization...</div>
+    );
   }
 
   return (
@@ -131,7 +148,9 @@ export default function LogsTable() {
                 <tr key={log.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2 font-mono text-xs">{log.user_id}</td>
                   <td className="px-4 py-2">{log.action}</td>
-                  <td className="px-4 py-2">{new Date(log.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-2">
+                    {new Date(log.created_at).toLocaleString()}
+                  </td>
                   <td className="px-4 py-2">
                     <button
                       onClick={() => setSelectedLog(log)}
