@@ -1,12 +1,13 @@
 'use client';
 
+import LogsTable from './components/LogsTable';
+
 export default function LogsPage() {
   return (
     <div className="p-4">
-      <p className="text-sm text-gray-600 mb-4">
-        This is where audit logs and events will be displayed.
-      </p>
+      <LogsTable />
     </div>
   );
 }
-// src/app/logs/page.tsx
+// This page displays the logs of user actions in the application.
+// It uses the LogsTable component to render the logs in a table format.
