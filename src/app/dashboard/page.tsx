@@ -23,11 +23,16 @@ export default function DashboardPage() {
   }, []);
 
   const handleTestLog = async () => {
+    console.log('✅ Test log button clicked');
+    alert('Test log triggered'); // Optional for visual feedback
+
     await logAction({
       user_id: 'test-user-123',
       action: 'Test log from dashboard',
       metadata: { source: 'dashboard button' },
     });
+
+    console.log('✅ logAction completed');
   };
 
   return (
